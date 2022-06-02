@@ -48,13 +48,18 @@ const persons = [{
    type Query {
       personsCount: Int!
       allPersons: [Person]!
+      findPerson(name: String!): Person
    }
  `
 
  const resolvers = {
     Query: {
       personsCount: () => persons.length,
-      allPersons: () => persons
+      allPersons: () => persons,
+      findPerson: (root, args) => {  //los args son los parametos q le vas pasarcomo el name
+        const { name } = args
+        return persons.find(person => person.name.toLocaleLowerCase() === name.toLocaleLowerCase())
+      } 
     }
  }
  
