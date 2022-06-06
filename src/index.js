@@ -1,16 +1,18 @@
 const persons = [{
+   age: "23", 
    "id": "e0e574fe-84d6-427b-acd7-9de4a6320e25",
    "name": "Carol",
    "phone": "186-132-2685",
    "street": "4867 Elmside Trail",
    "city": "Nicolet"
  }, {
+   age: "16",
    "id": "0ae03af6-e4e7-49b8-838b-ddc32c8078f0",
    "name": "Shem",
    "phone": "366-576-6914",
    "street": "27 Claremont Lane",
    "city": "Kostopil"
- }, {
+ }, { 
    "id": "b032fc0d-4367-4385-a5d5-7020f4acf7f3",
    "name": "Simona",
    "phone": "777-787-8229",
@@ -30,25 +32,42 @@ const persons = [{
    "city": "Nebug"
  }]
 
- import { ApolloServer, gql } from 'apollo-server'
+ import { ApolloServer, gql, UserInputError } from 'apollo-server'
+ import { v1 as uuid } from 'uuid'
 
  //la exclamacion "!" es para definir q es un campo requerido
  // apollo tiene varios tipos de datos como el "ID"
  // tambien puedes crear tu propio tipo de dato en apollo
  // simpre tienes q definir la Query por lo menos un metodo
  const typeDefs = gql`
+   type Address {
+     street: String!
+     city: String!
+   }
+
    type Person {
       name: String! 
       phone: String
-      street: String!
-      city: String!
       id: ID!
+      address1: String!
+      address2: Address!
+      check: String!
+      canDrink: Boolean
    }
 
    type Query {
       personsCount: Int!
       allPersons: [Person]!
       findPerson(name: String!): Person
+   }
+
+   type Mutation{
+     addPerson(
+       name: String!
+       phone: String
+       street: String!
+       city: String!
+     ):Person
    }
  `
 
@@ -60,7 +79,39 @@ const persons = [{
         const { name } = args
         return persons.find(person => person.name.toLocaleLowerCase() === name.toLocaleLowerCase())
       } 
+    },
+    Mutation: {
+      addPerson: ( root, args ) => {
+        if(persons.find( p => p.name === args.name)){
+          // throw new Error(' Name must be unique') //imprimir el error asi normal
+          throw new UserInputError(' Name must be unique',{
+            invalidArgs: args.name
+          }) //imprimir de forma mejor el error con 
+        }
+        // const { name, phone, street, city } = args
+        const person = { ...args, id: uuid() }
+        persons.push(person)
+        return person
+      }
+    },
+    Person: {
+      // name: ( root ) => root.name,
+      // phone: ( root ) => root.phone, ////esto lo hace apollo por defecto
+      // street: ( root ) => root.street,
+      // city: ( root ) => root.city,
+      // id: ( root ) => root.id,
+      
+      address1: ( root ) => `${ root.street }, ${ root.city }`, //puedes resolver nuevos capos q son calculos pero tienes q describirlos en los Tipos definidos tmbn
+      check: () => "propiedad por defecto",
+      canDrink: ( root ) => root.age > 18 ,
+      address2: ( root ) => {
+        return {
+          street: root.street,
+          city: root.city
+        }
+      }
     }
+
  }
  
  const server = new ApolloServer({
