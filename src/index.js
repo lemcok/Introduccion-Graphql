@@ -9,7 +9,6 @@ const persons = [{
    age: "16",
    "id": "0ae03af6-e4e7-49b8-838b-ddc32c8078f0",
    "name": "Shem",
-   "phone": "366-576-6914",
    "street": "27 Claremont Lane",
    "city": "Kostopil"
  }, { 
@@ -27,7 +26,6 @@ const persons = [{
  }, {
    "id": "09e93d8a-e3cd-47b6-adfb-c085cc270eed",
    "name": "Hetty",
-   "phone": "530-807-3926",
    "street": "603 Northland Lane",
    "city": "Nebug"
  }]
@@ -40,6 +38,10 @@ const persons = [{
  // tambien puedes crear tu propio tipo de dato en apollo
  // simpre tienes q definir la Query por lo menos un metodo
  const typeDefs = gql`
+  enum YesNo {
+    YES
+    NO
+  }
    type Address {
      street: String!
      city: String!
@@ -57,7 +59,7 @@ const persons = [{
 
    type Query {
       personsCount: Int!
-      allPersons: [Person]!
+      allPersons(phone: YesNo): [Person]!
       findPerson(name: String!): Person
    }
 
@@ -74,7 +76,14 @@ const persons = [{
  const resolvers = {
     Query: {
       personsCount: () => persons.length,
-      allPersons: () => persons,
+      allPersons: (root, args) => {
+        if(!args.phone) return persons
+
+        const byPhone = persons => 
+                          args.phone === "YES" ? persons.phone : !persons.phone //aqui he extraido solo el callback fuera
+        
+        return persons.filter( byPhone )
+      },
       findPerson: (root, args) => {  //los args son los parametos q le vas pasarcomo el name
         const { name } = args
         return persons.find(person => person.name.toLocaleLowerCase() === name.toLocaleLowerCase())
